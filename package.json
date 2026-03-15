@@ -5,13 +5,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "clean": "rimraf dist",
-  "prebuild": "npm run clean",
-  "build": "tsc",
-  "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
-  "start": "cross-env NODE_ENV=production node dist/index.js",
-  "check": "tsc --noEmit"
-},
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "start": "node --env-file=.env dist/index.js",
+    "check": "tsc --noEmit"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

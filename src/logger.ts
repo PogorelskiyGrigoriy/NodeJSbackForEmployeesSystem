@@ -2,12 +2,10 @@ import pino, { type LoggerOptions } from 'pino';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-// 1. Basic configuration
 const pinoOptions: LoggerOptions = {
-  level: isDevelopment ? 'trace' : 'info',
+  level: process.env.LOG_LEVEL || (isDevelopment ? 'trace' : 'info'),
 };
 
-// 2. Add transport only for development environment
 if (isDevelopment) {
   pinoOptions.transport = {
     target: 'pino-pretty',
@@ -19,7 +17,6 @@ if (isDevelopment) {
   };
 }
 
-// 3. Initialize and export logger instance
 const logger = pino(pinoOptions);
 
 export default logger;
