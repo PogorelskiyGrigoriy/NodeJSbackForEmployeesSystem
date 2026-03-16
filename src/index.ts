@@ -1,30 +1,25 @@
 import logger from "./logger.js";
 
 function runLotto() {
-    // получаем три числа из терминала в виде строк
+    // Get three numbers from the terminal as strings
     const rawArgs = process.argv.slice(2);
 
-    // Сразу проверяем количество, чтобы linter не ругался
-    if (rawArgs.length < 3) {
-        return logger.error("Нужно передать 3 аргумента: min, max и count.");
-    }
-
-    //  кастим строки в числа
+    // Cast strings to numbers
     const min = Number(rawArgs[0]);
     const max = Number(rawArgs[1]);
     const count = Number(rawArgs[2]);
 
-    // проверяем, получилось ли скастить
+    // Validate if the casting was successful
     if (isNaN(min) || isNaN(max) || isNaN(count)) {
-        return logger.error("Все аргументы должны быть числами.");
+        return logger.error("All arguments must be valid numbers.");
     }
 
-    // простая проверка на логику
+    // Simple logic check
     if (count > (max - min + 1)) {
-        return logger.error("В мешке меньше бочонков, чем вы хотите достать!");
+        return logger.error("The pool is smaller than the requested amount of numbers!");
     }
 
-    // работаем с Set, чтобы не проверять повторяющиеся числа вручную
+    // Use a Set to avoid checking for duplicate numbers manually
     const resultStore = new Set<number>();
 
     while (resultStore.size < count) {
@@ -32,9 +27,10 @@ function runLotto() {
         resultStore.add(randomNum);
     }
 
-    // вывод данных в логгер
+    // Output data to the logger
     const finalResult = Array.from(resultStore);
-    logger.info(`Выпавшие числа: ${finalResult.join(", ")}`);
+    logger.info(`Drawn numbers: ${finalResult.join(", ")}`);
 }
 
 runLotto();
+// npm run dev -- 1 100 6
