@@ -1,5 +1,5 @@
 node_modules/
 dist/
-.tsx/
 *.log
 .env
+.file.txt

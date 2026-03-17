@@ -1,22 +1,26 @@
-import pino, { type LoggerOptions } from 'pino';
+import pino from "pino"
+import pretty from "pino-pretty"
+const prettyTime = new Intl.DateTimeFormat(undefined,{
+    timeZone: process.env.TZ,
+    dateStyle: "short",
+    timeStyle: "medium",
+    hour12: false
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+    
+})
+const stream = pretty({
+  translateTime: false,
+  customPrettifiers: {
+    time: (value) => prettyTime.format(new Date(Number(value)))
+  },
+  ignore: "pid,hostname",
+  levelFirst: true,
+  singleLine: true
+})
 
-const pinoOptions: LoggerOptions = {
-  level: process.env.LOG_LEVEL || (isDevelopment ? 'trace' : 'info'),
-};
+const validLevels = new Set(["trace", "debug", "info", "warn", "error", "fatal", "silent"])
+const envLevel = (process.env.LOGGER_LEVEL ?? "").toLowerCase()
+const level = validLevels.has(envLevel) ? envLevel : "info"
 
-if (isDevelopment) {
-  pinoOptions.transport = {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss Z',
-      ignore: 'pid,hostname',
-    },
-  };
-}
-
-const logger = pino(pinoOptions);
-
-export default logger;
+const logger = pino({ level }, stream)
+export default logger
