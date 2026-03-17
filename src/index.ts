@@ -1,7 +1,7 @@
-import logger from "./logger.js";
 import LoggerEmitter from "./LoggerEmitter.js";
-import { consoleHandler } from "./consoleLogHandler.js";
-import { fileHandler } from "./fileLogHandler.js";
-const loggerEmitter = new LoggerEmitter([consoleHandler, fileHandler]);
+import { ConsoleHandler } from "./consoleLogHandler.js";
+import { FileHandler } from "./fileLogHandler.js";
+
+const loggerEmitter = new LoggerEmitter([new ConsoleHandler,new FileHandler("logs.txt")]);
 const messages = ["pew","dew","mew"]
 messages.forEach(msg => loggerEmitter.log(msg));
