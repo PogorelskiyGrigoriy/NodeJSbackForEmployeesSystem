@@ -1,3 +1,3 @@
 export interface LoggerHandler {
-    handler(): (message: string) => void
+    handler(): (message: string, label: string) => void;
 }

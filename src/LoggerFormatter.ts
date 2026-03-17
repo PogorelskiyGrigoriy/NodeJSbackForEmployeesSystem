@@ -1,3 +1,4 @@
 export interface LoggerFormatter {
-    format(message: string): string;
+    // Add optional label parameter to the contract
+    format(message: string, label?: string): string;
 }

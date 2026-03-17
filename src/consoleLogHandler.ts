@@ -2,13 +2,13 @@ import type { LoggerHandler } from "./LoggerHandler.js";
 import type { LoggerFormatter } from "./LoggerFormatter.js";
 
 export class ConsoleHandler implements LoggerHandler {
-    // 1. Принимаем форматер в конструкторе
     constructor(private _formatter: LoggerFormatter) {}
 
-    handler(): (message: string) => void {
-        // 2. Возвращаем функцию, которая использует форматер
-        return (message: string) => {
-            console.log(this._formatter.format(message));
+    // Update signature to accept (message, label)
+    handler(): (message: string, label: string) => void {
+        return (message: string, label: string) => {
+            // Pass label to formatter for improved output
+            console.log(this._formatter.format(message, label));
         };
     }
 }

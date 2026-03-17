@@ -1,6 +1,6 @@
 import type { LoggerFormatter } from "./LoggerFormatter.js";
 
-// Определяем тип для настроек, чтобы было удобно расширять
+// Configuration options for time formatting
 export interface TimeFormatterOptions {
     timeZone?: string;
     locale?: string;
@@ -12,9 +12,9 @@ export class TimeFormatter implements LoggerFormatter {
 
     constructor(options: TimeFormatterOptions = {}) {
         const {
-            // Приоритет: переданная зона -> переменная окружения -> дефолт
+            // Priority: provided zone -> env variable -> default
             timeZone = process.env.TZ || "Asia/Jerusalem",
-            locale = "en-GB", // Стабильный формат (DD/MM/YYYY)
+            locale = "en-GB", // Standard DD/MM/YYYY format
             includeDate = true
         } = options;
 
@@ -26,7 +26,7 @@ export class TimeFormatter implements LoggerFormatter {
                 hour12: false
             });
         } catch (error) {
-            // Если таймзона невалидная, откатываемся на UTC, чтобы приложение не упало
+            // Fallback to UTC to prevent application crash on invalid timezone
             console.warn(`Invalid timezone "${timeZone}", falling back to UTC.`);
             this._intlFormatter = new Intl.DateTimeFormat(locale, {
                 timeZone: "UTC",
@@ -36,8 +36,13 @@ export class TimeFormatter implements LoggerFormatter {
         }
     }
 
-    format(message: string): string {
+    // Update signature to include optional log level label
+    format(message: string, label?: string): string {
         const timestamp = this._intlFormatter.format(Date.now());
-        return `[${timestamp}] ${message}`;
+        
+        // Build prefix: include label in brackets if provided
+        const prefix = label ? `[${timestamp}] [${label}]` : `[${timestamp}]`;
+        
+        return `${prefix} ${message}`;
     }
 }
