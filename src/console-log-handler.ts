@@ -1,5 +1,5 @@
-import type { LoggerHandler } from "./LoggerHandler.js";
-import type { LoggerFormatter } from "./LoggerFormatter.js";
+import type { LoggerHandler } from "./logger-handler.js";
+import type { LoggerFormatter } from "./logger-formatter.js";
 
 export class ConsoleHandler implements LoggerHandler {
     constructor(private _formatter: LoggerFormatter) {}

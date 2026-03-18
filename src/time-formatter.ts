@@ -1,4 +1,4 @@
-import type { LoggerFormatter } from "./LoggerFormatter.js";
+import type { LoggerFormatter } from "./logger-formatter.js";
 
 // Configuration options for time formatting
 export interface TimeFormatterOptions {

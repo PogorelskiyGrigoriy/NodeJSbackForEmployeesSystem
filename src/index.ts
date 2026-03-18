@@ -1,37 +1,36 @@
-import LoggerEmitter, { LogLevel } from "./LoggerEmitter.js";
-import { TimeFormatter } from "./TimeFormatter.js";
-import { ConsoleHandler } from "./consoleLogHandler.js";
-import { FileHandler } from "./fileLogHandler.js";
+// src/index.ts (или core/logger/init.ts)
+import LoggerEmitter, { LogLevel } from "./logger-emitter.js";
+import { ConsoleHandler } from "./console-log-handler.js";
+import { FileHandler } from "./file-log-handler.js";
+import { LevelFilterDecorator } from "./level-filter-decorator.js";
+import { TimeFormatter } from "./time-formatter.js";
 
 const formatter = new TimeFormatter();
 
-// 1. Initialize with WARN threshold (only WARN, ERROR, FATAL should pass)
+// --- РЕАЛИЗАЦИЯ СПОСОБА 3 (Декораторы для файлов) ---
+// 1. Общий файл (пишем всё от INFO и выше)
+const allLogFile = new FileHandler("logs.txt", formatter);
+
+// 2. Критический файл (пишем ТОЛЬКО ошибки)
+const errorFile = new FileHandler("logs.txt", formatter);
+const criticalOnlyDecorator = new LevelFilterDecorator(errorFile, ["ERROR", "FATAL"]);
+
+// Создаем эмиттер с базовыми хендлерами
 const logger = new LoggerEmitter([
-    new ConsoleHandler(formatter),
-    new FileHandler("logs.txt", formatter)
-], LogLevel.WARN);
+    new ConsoleHandler(formatter), 
+    allLogFile, 
+    criticalOnlyDecorator // <-- Декоратор работает внутри списка хендлеров
+], LogLevel.INFO);
 
-console.log("--- START TEST (Threshold: WARN) ---");
 
-// 2. Testing filtration
-logger.log("This should NOT appear (INFO < WARN)", LogLevel.INFO);
-logger.log("This SHOULD appear (WARN)", LogLevel.WARN);
-logger.log("This SHOULD appear (ERROR)", LogLevel.ERROR);
+// --- РЕАЛИЗАЦИЯ СПОСОБА 2 (События для алертов) ---
+// Подписываем логику уведомлений на конкретный канал эмиттера
+logger.on("message:FATAL", (message) => {
+    // Здесь может быть вызов сервиса Телеграм или Почты
+    console.warn("🚀 [ALERT SYSTEM] Sending emergency notification...");
+    // emailService.sendAdminAlert(message);
+});
 
-// 3. Testing default level (should be INFO, so it won't appear as INFO < WARN)
-logger.log("This is a default level message (INFO)");
-
-// 4. Testing "Invalid" data fallback (simulating JS environment)
-// It should fallback to INFO and be filtered out because INFO < WARN
-logger.log("Testing invalid level", 999 as any);
-
-console.log("--- CHANGING THRESHOLD TO TRACE ---");
-
-// 5. Test changing threshold at runtime (if you added a setter)
-// If you didn't add setMinLevel, you can just create a new instance for this test
-const traceLogger = new LoggerEmitter([new ConsoleHandler(formatter)], LogLevel.TRACE);
-
-traceLogger.log("Now TRACE is visible", LogLevel.TRACE);
-traceLogger.log("And INFO is also visible", LogLevel.INFO);
-
-console.log("--- TEST FINISHED ---");
+// --- ПРОВЕРКА ---
+logger.log("Standard operation", LogLevel.INFO);   // Пойдет в Console и app.log
+logger.log("Critical DB failure!", LogLevel.FATAL); // Пойдет в Console, app.log, errors.log И сработает Алерт
