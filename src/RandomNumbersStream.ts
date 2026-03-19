@@ -7,15 +7,16 @@ export default class RandomNumbersStream extends Readable {
         private _min: number,
         private _max: number,
         private _chunkNumbers: number = 1024 * 256,
-        options: ReadableOptions = { highWaterMark: 1024 * 1024 }) {
+        options: ReadableOptions = { highWaterMark: 1024 * 1024 * 2 }) {
         super(options)
-        if (_min > _max) {
-            [_min, _max] = [_max, _min]
+        if (this._min > this._max) {
+            [this._min, this._max] = [this._max, this._min];
         }
     }
     override _read(_: number): void {
         if (this.counter >= this._amount) {
             this.push(null)
+            return
         } else {
             const chunkNumbers = Math.min(this._amount - this.counter, this._chunkNumbers)
             const buffer: Buffer = this._getChunkBuffer(chunkNumbers);
