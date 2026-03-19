@@ -1,54 +1,30 @@
-import { performance } from 'node:perf_hooks';
-import { pipeline } from 'node:stream/promises';
-import { Writable } from 'node:stream';
-import { setTimeout } from 'node:timers/promises';
-import RandomNumbersStream from './RandomNumbersStream.js';
+import { pipeline } from "node:stream/promises";
+import InfiniteRandomStream from "./RandomNumbersStream.js";
+import FilterStream from "./FilterStream.js";
+import LimitStream from "./LimitStream.js";
+import OutputStream from "./OutputStream.js"; // Не забудь импорт!
 
-const TOTAL_NUMBERS = 100_000_000;
-const MIN = 1;
-const MAX = 100;
-
-/**
- * Вспомогательный класс для "поглощения" данных без записи на диск.
- * Позволяет измерить чистую производительность генератора и стрима.
- */
-class DevNull extends Writable {
-    processedBytes = 0;
-    _write(chunk: Buffer, _encoding: string, callback: (error?: Error | null) => void) {
-        this.processedBytes += chunk.length;
-        callback();
-    }
-}
-
-async function runBenchmark() {
-    console.log(`🧪 Starting benchmark for ${TOTAL_NUMBERS.toLocaleString()} numbers...`);
-    
-    // Даем время GC очистить память перед стартом
-    await setTimeout(500);
-
-    const stream = new RandomNumbersStream(TOTAL_NUMBERS, MIN, MAX);
-    const sink = new DevNull();
-
-    const start = performance.now();
+async function run() {
+    const source = new InfiniteRandomStream(1, 100);
+    const filter = new FilterStream(n => n % 10 === 0);
+    const limit = new LimitStream(50); 
+    const output = new OutputStream("; "); // Создаем наш обработчик вывода
 
     try {
-        await pipeline(stream, sink);
-        
-        const end = performance.now();
-        const duration = (end - start) / 1000;
-        const throughput = (TOTAL_NUMBERS / duration) / 1_000_000;
-        const dataMB = sink.processedBytes / (1024 * 1024);
-
-        console.log('\n-----------------------------------');
-        console.log(`✅ Finished in: ${duration.toFixed(3)} s`);
-        console.log(`📊 Speed: ${throughput.toFixed(2)} million numbers/sec`);
-        console.log(`📦 Data processed: ${dataMB.toFixed(2)} MB`);
-        console.log(`🚀 Bandwidth: ${(dataMB / duration).toFixed(2)} MB/s`);
-        console.log('-----------------------------------\n');
-
-    } catch (err) {
-        console.error("❌ Benchmark failed:", err);
+        await pipeline(
+            source,
+            filter,
+            limit,
+            output // Используем наш класс вместо process.stdout
+        );
+        console.log("\n✅ Done! Stream stopped by LimitStream.");
+    } catch (err: any) {
+        // pipeline бросает ошибку при destroy(), если не передать { signal }
+        // Но в данном случае мы просто ловим завершение
+        if (err.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+            console.error("❌ Pipeline failed:", err);
+        }
     }
 }
 
-runBenchmark();
+run();
