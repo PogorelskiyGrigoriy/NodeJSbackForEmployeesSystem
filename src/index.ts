@@ -1,36 +1,61 @@
-// src/index.ts (или core/logger/init.ts)
-import LoggerEmitter, { LogLevel } from "./logger-emitter.js";
-import { ConsoleHandler } from "./console-log-handler.js";
-import { FileHandler } from "./file-log-handler.js";
-import { LevelFilterDecorator } from "./level-filter-decorator.js";
-import { TimeFormatter } from "./time-formatter.js";
+import readline from 'node:readline/promises';
+import { fetchCurrentWeather } from './weather.service.api.js';
+import chalk from 'chalk';
+import logger from './pino-logger.js';
 
-const formatter = new TimeFormatter();
-
-// --- РЕАЛИЗАЦИЯ СПОСОБА 3 (Декораторы для файлов) ---
-// 1. Общий файл (пишем всё от INFO и выше)
-const allLogFile = new FileHandler("logs.txt", formatter);
-
-// 2. Критический файл (пишем ТОЛЬКО ошибки)
-const errorFile = new FileHandler("logs.txt", formatter);
-const criticalOnlyDecorator = new LevelFilterDecorator(errorFile, ["ERROR", "FATAL"]);
-
-// Создаем эмиттер с базовыми хендлерами
-const logger = new LoggerEmitter([
-    new ConsoleHandler(formatter), 
-    allLogFile, 
-    criticalOnlyDecorator // <-- Декоратор работает внутри списка хендлеров
-], LogLevel.INFO);
-
-
-// --- РЕАЛИЗАЦИЯ СПОСОБА 2 (События для алертов) ---
-// Подписываем логику уведомлений на конкретный канал эмиттера
-logger.on("message:FATAL", (message) => {
-    // Здесь может быть вызов сервиса Телеграм или Почты
-    console.warn("🚀 [ALERT SYSTEM] Sending emergency notification...");
-    // emailService.sendAdminAlert(message);
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
 });
 
-// --- ПРОВЕРКА ---
-logger.log("Standard operation", LogLevel.INFO);   // Пойдет в Console и app.log
-logger.log("Critical DB failure!", LogLevel.FATAL); // Пойдет в Console, app.log, errors.log И сработает Алерт
+async function main() {
+    logger.info("Приложение запущено");
+
+    try {
+        const city = await rl.question("\nВведите город: ");
+        const trimmedCity = city.trim();
+
+        if (!trimmedCity) {
+            logger.warn("Пользователь ввел пустую строку");
+            console.log(chalk.yellow("Вы не ввели название города."));
+            return;
+        }
+
+        logger.info({ city: trimmedCity }, "Запрос погоды для города");
+
+        // Пытаемся получить данные
+        const data = await fetchCurrentWeather(trimmedCity);
+        
+        logger.debug(data, "Сырые данные от API получены");
+
+        // Вывод пользователю
+        console.log(`\n📍 Город: ${chalk.bold(data.location.name)}, ${data.location.country}`);
+        console.log(`☁️ Погода: ${data.current.condition.text}`);
+        console.log(`🌡️ Температура: ${chalk.cyan(data.current.temp_c)}°C`);
+        console.log(`💧 Влажность: ${data.current.humidity}%`);
+
+        logger.info("Данные успешно выведены пользователю");
+
+    } catch (error: any) {
+        // Логируем полную ошибку со всеми деталями (стеком и ответом API)
+        const apiError = error.response?.data?.error?.message;
+        
+        logger.error({
+            msg: error.message,
+            apiDetail: apiError,
+            stack: error.stack,
+            status: error.response?.status
+        }, "Ошибка в работе приложения");
+
+        console.error(chalk.red("\n❌ Ошибка:"), apiError || error.message);
+    } finally {
+        logger.info("Закрытие интерфейса ввода и завершение процесса");
+        rl.close();
+    }
+}
+
+// Глобальный отлов ошибок, если что-то упадет вне блока try/catch
+main().catch(err => {
+    logger.fatal(err, "Критический сбой вне основного цикла");
+    process.exit(1);
+});

@@ -1,6 +1,19 @@
+# Зависимости
 node_modules/
+
+# Сборка
 dist/
+
+# Логи (папка и файлы)
+logs/
 *.log
-.env
-.file.txt
 *.txt
+
+# Секреты
+.env
+
+# Временные/Мусорные файлы
+.file.txt
+Thumbs.db
+.vscode/
+large_file
