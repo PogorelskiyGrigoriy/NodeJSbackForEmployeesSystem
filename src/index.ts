@@ -2,20 +2,23 @@ import { pipeline } from "node:stream/promises";
 import InfiniteRandomStream from "./RandomNumbersStream.js";
 import FilterStream from "./FilterStream.js";
 import LimitStream from "./LimitStream.js";
-import OutputStream from "./OutputStream.js"; // Не забудь импорт!
+import OutputStream from "./OutputStream.js";
+import UniqueStream from "./UniqueStream.js";
 
 async function run() {
     const source = new InfiniteRandomStream(1, 100);
-    const filter = new FilterStream(n => n % 10 === 0);
-    const limit = new LimitStream(50); 
-    const output = new OutputStream("; "); // Создаем наш обработчик вывода
+    const filter = new FilterStream(n => n % 2 === 0);
+    const limit = new LimitStream(45); 
+    const output = new OutputStream("; ");
+    const unique = new UniqueStream;
 
     try {
         await pipeline(
             source,
             filter,
+            unique,
             limit,
-            output // Используем наш класс вместо process.stdout
+            output
         );
         console.log("\n✅ Done! Stream stopped by LimitStream.");
     } catch (err: any) {
