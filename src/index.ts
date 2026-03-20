@@ -1,34 +1,32 @@
-import { pipeline } from "node:stream/promises";
+import { pipeline, finished } from "node:stream/promises";
 import InfiniteRandomStream from "./RandomNumbersStream.js";
-import FilterStream from "./FilterStream.js";
-import LimitStream from "./LimitStream.js";
 import OutputStream from "./OutputStream.js";
-import UniqueStream from "./UniqueStream.js";
-import logger from "./pino-logger.js";
+import StreamPipelineBuilder from "./StreamPipelineBuilder.js";
 
 async function run() {
     const source = new InfiniteRandomStream(1, 100);
-    const filter = new FilterStream(n => n % 2 === 0);
-    const unique = new UniqueStream();
-    const limit = new LimitStream(20); 
     const output = new OutputStream("; ");
-    
+
+    // 1. Используем Билдер для сборки трансформаций
+    const transforms = new StreamPipelineBuilder()
+        .filter(n => n % 2 === 0)
+        .unique()                 
+        .limit(10)              
+        .build();              
 
     try {
         await pipeline(
             source,
-            filter,
-            unique,
-            limit,
+            ...transforms,
             output
         );
     } catch (err: any) {
-    if (err.code === 'ERR_STREAM_PREMATURE_CLOSE') {
+        if (err.code === 'ERR_STREAM_PREMATURE_CLOSE') {
             console.log("\n✅ Done! Stream stopped by LimitStream.");
-    } else {
-        console.error("❌ Pipeline failed:", err);
+        } else {
+            console.error("❌ Pipeline failed:", err);
+        }
     }
-}
 }
 
 run();
