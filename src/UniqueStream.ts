@@ -1,30 +1,43 @@
 import { Transform, type TransformCallback } from "node:stream";
 
 /**
- * Стрим-трансформер для фильтрации дубликатов.
- * Работает в objectMode, пропуская только те значения, которые еще не встречались.
+ * A Transform stream that filters out duplicate values.
+ * Operates in objectMode and ensures each unique chunk passes through only once.
  */
 export default class UniqueStream extends Transform {
-    // Используем Set для максимально быстрого поиска (O(1))
+    /** * Using a Set for O(1) lookup performance to track seen values 
+     */
     private _seen: Set<number> = new Set();
 
     constructor() {
+        // Enforce objectMode to handle numbers directly
         super({ objectMode: true });
     }
 
-    override _transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void {
-        // Проверяем, видели ли мы это число раньше
+    /**
+     * Core logic for uniqueness filtering.
+     * Only pushes the chunk if it hasn't been encountered yet.
+     */
+    override _transform(
+        chunk: any, 
+        encoding: BufferEncoding, 
+        callback: TransformCallback
+    ): void {
+        // Check if the value is already in the Set
         if (!this._seen.has(chunk)) {
-            // Если нет — сохраняем его и проталкиваем дальше по цепочке
+            // Store the new value and forward it down the pipeline
             this._seen.add(chunk);
             this.push(chunk);
         }
         
-        // В любом случае вызываем callback, чтобы получить следующий чанк
+        // Notify the stream that the current chunk has been processed
         callback();
     }
 
-    // Очищаем память после завершения работы стрима
+    /**
+     * Clean up resources after the stream has finished processing.
+     * Clears the Set to release memory.
+     */
     override _flush(callback: TransformCallback): void {
         this._seen.clear();
         callback();
