@@ -16,13 +16,17 @@ export default class InfiniteRandomObjectStream extends Readable {
     }
 
     override _read(): void {
-        const range = this._max - this._min + 1;
-
-        while (!this.destroyed) {
-            const randomNumber = Math.trunc(Math.random() * range) + this._min;
-            if (!this.push(randomNumber)) {
-                break;
-            }
+    const range = this._max - this._min + 1;
+    
+    // Генерируем числа, пока потребитель готов их принимать
+    // И пока сам стрим не был уничтожен командой извне
+    while (!this.destroyed) {
+        const num = Math.floor(Math.random() * range) + this._min;
+        
+        // push возвращает false, если буфер переполнен или стрим закрыт
+        if (!this.push(num)) {
+            break; 
         }
     }
+}
 }

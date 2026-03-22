@@ -4,27 +4,31 @@ import OutputStream from "./OutputStream.js";
 import StreamPipelineBuilder from "./StreamPipelineBuilder.js";
 
 async function run() {
-    const source = new InfiniteRandomStream(1, 200);
+    const source = new InfiniteRandomStream(1, 100);
     const output = new OutputStream("; ");
-
-    const transforms = new StreamPipelineBuilder()
+    
+    // Билдер теперь возвращает объект с массивом трансформаций и сигналом
+    const { transforms, signal } = new StreamPipelineBuilder()
         .filter(n => n % 2 === 0)
-        .unique()                 
-        .limit(30)              
-        .build();              
+        .unique() 
+        .limit(40) // Теперь лимит сам знает о внутреннем контроллере
+        .build();
 
     try {
-        await pipeline(
-            source,
-            ...transforms,
-            output
-        );
-    } catch (err: any) {
-        if (err.code === 'ERR_STREAM_PREMATURE_CLOSE') {
-            console.log("\n✅ Done! Stream stopped by LimitStream.");
+        // Передаем извлеченный сигнал в опции pipeline
+        await pipeline(source, ...transforms, output, { signal });
+        
+        console.log("\n✅ Пайплайн завершен штатно");
+    } catch (err: unknown) {
+        // Используем проверку на Error для типобезопасности вместо any
+        if (err instanceof Error && err.name === 'AbortError') {
+            console.log("\n🛑 Пайплайн остановлен: лимит достигнут");
         } else {
-            console.error("❌ Pipeline failed:", err);
+            console.error("\n❌ Произошла критическая ошибка:", err);
         }
+    } finally {
+        console.log("\n--- Завершение работы пайплайна ---");
+        console.log("Это сообщение выведется ВСЕГДА");
     }
 }
 
