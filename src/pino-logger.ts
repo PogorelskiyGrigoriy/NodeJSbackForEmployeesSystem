@@ -24,7 +24,7 @@ const prettyStream = pretty({
 const streams: pino.StreamEntry[] = [
     // Консоль: теперь здесь не сырой JSON, а отформатированный текст
     { 
-        level: 'warn', 
+        level: logLevel as pino.Level, 
         stream: prettyStream 
     },
     // Общий файл: сюда пишем сырой JSON (стандарт для продакшена)

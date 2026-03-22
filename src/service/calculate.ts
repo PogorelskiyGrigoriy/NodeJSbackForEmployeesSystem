@@ -1,35 +1,34 @@
-import type { CalcData } from "../model/CalcData.js";
+import { ServiceError } from "../errors/ServiceError.js";
+import { type CalcData } from "../model/CalcData.js";
 
-// 1. Определяем класс ошибки, если его еще нет
-export class ServiceError extends Error {
-    constructor(public status: number, message: string) {
-        super(message);
-        this.name = "ServiceError";
-    }
-}
+// Extract operation type directly from the Zod-inferred schema
+type OperationType = CalcData['operation'];
 
-const operations: Map<string, (op1: number, op2: number) => number> = new Map([
-    ["add", (op1, op2) => op1 + op2],
-    ["sub", (op1, op2) => op1 - op2],
-    ["mult", (op1, op2) => op1 * op2],
-    ["div", (op1, op2) => {
-        if (op2 === 0) throw new ServiceError(400, "op2 cant be 0");
+// Map operations using a Record to ensure exhaustive implementation of schema keys
+const operations: Record<OperationType, (op1: number, op2: number) => number> = {
+    add: (op1, op2) => op1 + op2,
+    sub: (op1, op2) => op1 - op2,
+    mul: (op1, op2) => op1 * op2,
+    div: (op1, op2) => {
+        if (op2 === 0) throw new ServiceError(400, "op2 cannot be 0");
         return op1 / op2;
-    }],
-    ["percent", (op1, op2) => {
-        if (op2 === 0) throw new ServiceError(400, "op2 cant be 0");
-        const result = (op1 / op2) * 100;
-        return Number(result.toFixed(2));
-    }],
-]);
+    },
+    percent: (part, whole) => {
+        if (whole === 0) throw new ServiceError(400, "Whole cannot be 0");
+        return Number(((part / whole) * 100).toFixed(2));
+    },
+};
 
-export default function calculate(data: CalcData): number {
-    const { op1, op2, operation } = data;
-    const execute = operations.get(operation);
-
-    if (!execute) {
-        throw new ServiceError(404, `Unknown operation: ${operation}`);
+/**
+ * Executes the requested arithmetic operation based on validated CalcData.
+ */
+export default function calculate({ op1, op2, operation }: CalcData): number {
+    const opFun = operations[operation];
+    
+    // Safety check for runtime scenarios or schema mismatches
+    if (!opFun) {
+        throw new ServiceError(501, `Operation ${operation} is defined in schema but not implemented`);
     }
 
-    return execute(op1, op2);
+    return opFun(op1, op2);
 }
