@@ -1,17 +1,16 @@
-import { pipeline, finished } from "node:stream/promises";
+import { pipeline } from "node:stream/promises";
 import InfiniteRandomStream from "./RandomNumbersStream.js";
 import OutputStream from "./OutputStream.js";
 import StreamPipelineBuilder from "./StreamPipelineBuilder.js";
 
 async function run() {
-    const source = new InfiniteRandomStream(1, 100);
+    const source = new InfiniteRandomStream(1, 200);
     const output = new OutputStream("; ");
 
-    // 1. Используем Билдер для сборки трансформаций
     const transforms = new StreamPipelineBuilder()
         .filter(n => n % 2 === 0)
         .unique()                 
-        .limit(10)              
+        .limit(30)              
         .build();              
 
     try {
