@@ -9,7 +9,7 @@
     "prebuild": "npm run clean",
     "build": "tsc",
     "check": "tsc --noEmit",
-    "dev": "node --import tsx --watch --env-file=.env src/index.ts",
+    "dev": "node --import tsx --watch --env-file=.env src/controller/index.ts",
     "start": "tsx --env-file=.env src/index.ts",
     "serve": "node --env-file=.env dist/index.js"
   },
