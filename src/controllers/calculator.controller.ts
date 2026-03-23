@@ -1,23 +1,21 @@
 import type { Request, Response, NextFunction } from "express";
 import calculate from "../services/calculate.js";
-import {type CalcData } from "../models/CalcData.js";
+import { type CalcData } from "../models/CalcData.js";
 
-/**
- * Обработчик логики калькулятора.
- * Теперь он максимально чистый и занимается только вызовом сервиса.
- */
 export const handleCalculate = (req: Request, res: Response, next: NextFunction): void => {
     try {
-        // Данные уже очищены и типизированы в req.body нашим middleware
-        const calcData = req.body as CalcData;
+        // Безопасно объединяем данные. 
+        // Если что-то пришло в body, оно перезапишет query (при совпадении ключей).
+        // Если body — undefined, спреад-оператор просто его проигнорирует.
+        const data = { ...req.query, ...req.body };
 
-        // Выполняем расчет
-        const result = calculate(calcData);
-
-        // Отправляем ответ в формате JSON (стандарт для API)
+        // Если объект совсем пустой (например, просто GET /calculate без параметров),
+        // сервис calculate упадет на деструктуризации.
+        // Но наше middleware validate(CalcDataSchema) должно было поймать это раньше.
+        
+        const result = calculate(data as CalcData);
         res.json({ result });
     } catch (error) {
-        // Передаем ошибку дальше в глобальный errorHandler
         next(error);
     }
 };

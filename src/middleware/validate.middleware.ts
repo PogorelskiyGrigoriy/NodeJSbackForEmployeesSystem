@@ -1,23 +1,24 @@
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 
-/**
- * Универсальное middleware для валидации Zod-схем.
- * Используем z.ZodTypeAny для поддержки любых схем без предупреждений о депрекации.
- */
-export const validate = (schema: z.ZodTypeAny) => 
+export const validate = (schema: z.ZodTypeAny, source: "body" | "query" = "body") => 
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            // .parseAsync возвращает очищенные и трансформированные данные
-            const validatedData = await schema.parseAsync(req.body);
+            // Валидируем данные
+            const validatedData = await schema.parseAsync(req[source]);
             
-            // Rule of Thumb: всегда перезаписывай req.body валидированными данными.
-            // Это гарантирует наличие default-значений и правильных типов в контроллере.
-            req.body = validatedData;
+            // Если мы валидируем body — перезаписываем целиком (тут это работает)
+            if (source === "body") {
+                req.body = validatedData;
+            } 
+            // Если query — копируем свойства в объект, не заменяя сам объект
+            else {
+                // Очищаем старые строковые данные и заменяем на валидированные (числа)
+                Object.assign(req.query, validatedData);
+            }
             
             next();
         } catch (error) {
-            // Ошибка ZodError улетает в глобальный обработчик
             next(error);
         }
     };

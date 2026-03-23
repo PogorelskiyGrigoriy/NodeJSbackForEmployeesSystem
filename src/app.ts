@@ -9,8 +9,8 @@ const app = express();
 // Middleware для парсинга JSON
 app.use(express.json());
 
-// Роутинг: заменяет твой "Simple Router" на базе if/else
 app.post("/calculate", validate(CalcDataSchema), handleCalculate);
+app.get("/calculate", validate(CalcDataSchema, "query"), handleCalculate);
 
 // Обработка 404 (если запрос не попал ни в один роут выше)
 app.use((req, res) => {

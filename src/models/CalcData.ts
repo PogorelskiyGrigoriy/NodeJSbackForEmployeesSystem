@@ -6,8 +6,8 @@ import { z } from "zod";
  */
 export const CalcDataSchema = z.object({
     // Validate operands: must be present and numeric
-    op1: z.number({ message: "op1 is required and must be a number" }),
-    op2: z.number({ message: "op2 is required and must be a number" }),
+    op1: z.coerce.number({ message: "op1 is required and must be a number" }),
+    op2: z.coerce.number({ message: "op2 is required and must be a number" }),
     
     // Validate operation: must match the defined list of supported literals
     operation: z.enum(["add", "sub", "mul", "div", "percent"] as const, {
