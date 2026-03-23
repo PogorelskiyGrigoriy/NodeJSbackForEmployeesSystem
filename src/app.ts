@@ -9,8 +9,9 @@ const app = express();
 // Middleware для парсинга JSON
 app.use(express.json());
 
-app.post("/calculate", validate(CalcDataSchema), handleCalculate);
-app.get("/calculate", validate(CalcDataSchema, "query"), handleCalculate);
+app.route("/calculate")
+   .get(validate(CalcDataSchema), handleCalculate)
+   .post(validate(CalcDataSchema), handleCalculate);
 
 // Обработка 404 (если запрос не попал ни в один роут выше)
 app.use((req, res) => {

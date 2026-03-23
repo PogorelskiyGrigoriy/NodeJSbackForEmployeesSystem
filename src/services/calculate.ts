@@ -24,11 +24,5 @@ const operations: Record<OperationType, (op1: number, op2: number) => number> = 
  */
 export default function calculate({ op1, op2, operation }: CalcData): number {
     const opFun = operations[operation];
-    
-    // Safety check for runtime scenarios or schema mismatches
-    if (!opFun) {
-        throw new ServiceError(501, `Operation ${operation} is defined in schema but not implemented`);
-    }
-
     return opFun(op1, op2);
 }
