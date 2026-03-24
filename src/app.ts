@@ -18,7 +18,10 @@ app.route("/calculate")
 
 // Обработка 404 (если запрос не попал ни в один роут выше)
 app.use((req, res) => {
-    res.status(404).json({ error: "Not Found. Use POST /calculate" });
+    res.status(404).json({ 
+        error: "Route not found", 
+        message: "Valid endpoints: GET/POST /calculate" 
+    });
 });
 
 // Глобальный обработчик ошибок (всегда в конце)
